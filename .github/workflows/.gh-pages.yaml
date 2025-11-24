@@ -14,6 +14,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史
+
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -25,18 +28,21 @@ jobs:
 
       - name: Deploy to GitHub Pages
         run: |
-          # 配置 git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 创建孤儿分支 gh-pages
-          git checkout --orphan gh-pages
+          # 如果 gh-pages 存在就切换，否则创建
+          if git show-ref --verify --quiet refs/heads/gh-pages; then
+            git checkout gh-pages
+          else
+            git checkout --orphan gh-pages
+          fi
 
           # 添加 build 文件
           git --work-tree build add --all
           
-          # 提交内容
+          # 提交
           git --work-tree build commit -m "Deploy via GitHub Actions" || echo "No changes to commit"
 
-          # 强制推送到 gh-pages 分支
+          # 强制推送
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:gh-pages --force-with-lease
