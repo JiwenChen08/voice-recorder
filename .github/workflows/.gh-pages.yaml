@@ -1,37 +1,58 @@
-name: GitHub Pages
+name: Build & Deploy
 
-# 手动触发
 on:
-  workflow_dispatch:
+  workflow_dispatch:   # 手动触发
 
-# 权限
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
-  build-and-deploy:
+  # -------------------------
+  # 1️⃣ Build Job
+  # -------------------------
+  build:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ 检出仓库代码
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 获取完整历史，方便切换 gh-pages 分支
 
-      # 2️⃣ 安装 Node.js
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 18
 
-      # 3️⃣ 安装依赖并构建 React
-      - name: Install dependencies and Build
+      - name: Install & Build
         run: |
           npm ci
           npm run build
 
-      # 4️⃣ 部署到 gh-pages
-      - uses: peaceiris/actions-gh-pages@v4
+      # 上传 build 目录供 deploy job 使用
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build
+          name: voice-recorder   # 改成你想要的名字
+          path: build/
+
+  # -------------------------
+  # 2️⃣ Deploy Job
+  # -------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build   # 等待 build 完成
+    steps:
+      # 下载 build artifact
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: voice-recorder   # 必须和上传一致
+          path: build
+
+      # 上传 artifact 给 GitHub Pages
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+      # 部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
