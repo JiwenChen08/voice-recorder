@@ -52,4 +52,4 @@ jobs:
           git --work-tree build commit -m "Deploy via GitHub Actions" || echo "No changes to commit"
 
           # 推送到 gh-pages
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:gh-pages
+          git push origin HEAD:gh-pages
