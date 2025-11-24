@@ -31,12 +31,7 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 如果 gh-pages 存在就切换，否则创建
-          if git show-ref --verify --quiet refs/heads/gh-pages; then
-            git checkout gh-pages
-          else
-            git checkout --orphan gh-pages
-          fi
+          git checkout gh-pages
 
           # 添加 build 文件
           git --work-tree build add --all
