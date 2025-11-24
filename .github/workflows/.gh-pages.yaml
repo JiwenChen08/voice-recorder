@@ -1,4 +1,4 @@
-name: Deploy Voice Recorder to GitHub Pages
+name: GitHub Pages
 
 # 手动触发
 on:
