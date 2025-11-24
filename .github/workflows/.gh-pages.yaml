@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Github Pages
 
 on:
   workflow_dispatch:   # 手动触发
