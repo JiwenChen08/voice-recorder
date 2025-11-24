@@ -1,0 +1,39 @@
+/* 红灯呼吸灯动画 */
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+/* 左右布局全屏 */
+.app-container {
+  display: flex;
+  height: 100vh;
+  gap: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* 左栏 */
+.left-panel {
+  flex: 0 0 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 右栏 */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
+}
+
+/* 控制按钮组 */
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
