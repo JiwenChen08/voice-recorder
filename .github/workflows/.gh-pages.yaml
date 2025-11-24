@@ -32,25 +32,7 @@ jobs:
           npm run build
 
       # 4️⃣ 部署到 gh-pages
-      - name: Deploy to GitHub Pages
-        run: |
-          # 配置 git 用户
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # 切换到 gh-pages 分支
-          git fetch origin gh-pages
-          git checkout gh-pages
-
-          # 清空旧文件
-          git rm -rf . || echo "No files to remove"
-
-          # 添加 build 文件
-          git --work-tree build add --all
-
-          # 提交更改
-          git --work-tree build commit -m "Deploy via GitHub Actions" || echo "No changes to commit"
-
-          # 推送到 gh-pages
-          echo https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          # git push origin HEAD:gh-pages
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
