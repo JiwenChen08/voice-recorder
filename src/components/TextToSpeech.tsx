@@ -11,10 +11,9 @@ const TextToSpeech: React.FC = () => {
   useEffect(() => {
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices();
-      const filtered = allVoices.filter(v => /Google|Chrome/i.test(v.name));
-      setVoices(filtered);
-      if (!filtered.find(v => v.name === selectedVoice) && filtered.length > 0) {
-        setSelectedVoice(filtered[0].name);
+      setVoices(allVoices);
+      if (!allVoices.find(v => v.name === selectedVoice) && allVoices.length > 0) {
+        setSelectedVoice(allVoices[0].name);
       }
     };
     loadVoices();

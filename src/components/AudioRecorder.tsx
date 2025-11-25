@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useRef } from "react";
-import { Box, IconButton, Checkbox, Select, MenuItem, TextField, Slider,Typography } from "@mui/material";
+import { Box, IconButton, Checkbox, Select, MenuItem, TextField, Slider, Typography } from "@mui/material";
 import { Mic, Stop, Close, Hearing } from "@mui/icons-material";
 declare global {
   interface Window {
@@ -143,7 +143,51 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
     }
   };
 
-  const clearCC = () => setRecognizedText("");
+  const clearCC = () => {
+    setRecognizedText("");
+
+    // 重置语音识别
+    if (speechRecognition) {
+      speechRecognition.stop();
+      setSpeechRecognition(null);
+    }
+
+    // 如果 CC 已开启，重新启动语音识别
+    if (enableCC) {
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!Rec) return;
+
+      const rec: SpeechRecognitionType = new Rec();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = language;
+
+      rec.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript + " ";
+        }
+        setRecognizedText(transcript);
+      };
+
+      rec.start();
+      setSpeechRecognition(rec);
+    }
+  };
+
+  // 定义语言列表
+  const languages = [
+    { code: "en-US", label: "English (US)" },
+    { code: "en-GB", label: "English (UK)" },
+    { code: "de-DE", label: "German" },
+    { code: "zh-CN", label: "Chinese" },
+    { code: "fr-FR", label: "French" },
+    { code: "es-ES", label: "Spanish" },
+    { code: "ja-JP", label: "Japanese" },
+    { code: "ko-KR", label: "Korean" },
+    { code: "ru-RU", label: "Russian" },
+    // 可以继续扩展
+  ];
 
   return (
     <Box display="flex" flexDirection="column" gap={1}>
@@ -168,10 +212,11 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
         <Box>CC</Box>
 
         <Select value={language} onChange={(e) => setLanguage(e.target.value)} size="small">
-          <MenuItem value="en-US">English (US)</MenuItem>
-          <MenuItem value="en-GB">English (UK)</MenuItem>
-          <MenuItem value="de-DE">German</MenuItem>
-          <MenuItem value="zh-CN">Chinese</MenuItem>
+          {languages.map((lang) => (
+            <MenuItem key={lang.code} value={lang.code}>
+              {lang.label}
+            </MenuItem>
+          ))}
         </Select>
 
         <Checkbox checked={earReturn} onChange={(e) => setEarReturn(e.target.checked)} />
@@ -200,7 +245,7 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
           value={recognizedText}
           InputProps={{
             readOnly: true,
-            style: { fontSize: "1rem"},
+            style: { fontSize: "1rem" },
           }}
         />
         <IconButton
