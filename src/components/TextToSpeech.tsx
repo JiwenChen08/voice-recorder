@@ -1,48 +1,118 @@
-import React, { useState, useEffect } from "react";
-import { Box, TextField, Slider, Select, MenuItem, IconButton, Typography, Tooltip } from "@mui/material";
-import { VolumeUp, PlayArrow } from "@mui/icons-material";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Box,
+  TextField,
+  Slider,
+  IconButton,
+  Typography,
+  Autocomplete,
+  InputAdornment
+} from "@mui/material";
+import { VolumeUp, PlayArrow, Stop, Pause, Clear } from "@mui/icons-material";
 
 const TextToSpeech: React.FC = () => {
   const [text, setText] = useState("");
   const [volume, setVolume] = useState(0.4);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState("Google US English 6 (Natural)");
+  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [speaking, setSpeaking] = useState(false);
+  const [paused, setPaused] = useState(false);
 
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  // Load voices
   useEffect(() => {
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices();
-      setVoices(allVoices);
-      if (!allVoices.find(v => v.name === selectedVoice) && allVoices.length > 0) {
-        setSelectedVoice(allVoices[0].name);
-      }
+      const blackList = ["Albert", "Fred", "Trinoids", "Whisper"];
+      const filteredVoices = allVoices.filter(
+        (v) => !blackList.some((name) => v.name.includes(name))
+      );
+
+      setVoices(filteredVoices);
+      const defaultVoice =
+        filteredVoices.find((v) => v.name.includes("Google US English")) ||
+        filteredVoices[0];
+      setSelectedVoice(defaultVoice || null);
     };
+
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
-  }, [selectedVoice]);
+  }, []);
 
   const handleSpeak = () => {
-    if (!text) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.volume = volume;
-    const voice = voices.find(v => v.name === selectedVoice);
-    if (voice) utterance.voice = voice;
-    window.speechSynthesis.speak(utterance);
+    if (!text || !selectedVoice) return;
+
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.voice = selectedVoice;
+    utter.volume = volume;
+
+    utter.onstart = () => {
+      setSpeaking(true);
+      setPaused(false);
+    };
+    utter.onend = () => {
+      setSpeaking(false);
+      setPaused(false);
+    };
+
+    utteranceRef.current = utter;
+    window.speechSynthesis.speak(utter);
+  };
+
+  const handlePause = () => {
+    if (!speaking) return;
+    window.speechSynthesis.pause();
+    setPaused(true);
+  };
+
+  const handleResume = () => {
+    if (!paused) return;
+    window.speechSynthesis.resume();
+    setPaused(false);
+  };
+
+  const handleStop = () => {
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
+    setPaused(false);
+  };
+
+  const handleClear = () => {
+    setText("");
   };
 
   return (
-    <Box display="flex" flexDirection="column" gap={1} marginTop={2}>
-      {/* 控制区标题 */}
+    <Box display="flex" flexDirection="column" gap={2} mt={2}>
       <Typography variant="subtitle1">Text-to-Speech</Typography>
 
       {/* 控制区 */}
       <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-        {/* Speak 按钮 */}
-        <IconButton size="small" color="primary" onClick={handleSpeak}>
-          <PlayArrow fontSize="small" />
+        {/* Play / Stop / Pause / Resume */}
+        {speaking ? (
+          paused ? (
+            <IconButton size="small" color="primary" onClick={handleResume}>
+              <PlayArrow fontSize="small" />
+            </IconButton>
+          ) : (
+            <IconButton size="small" color="primary" onClick={handlePause}>
+              <Pause fontSize="small" />
+            </IconButton>
+          )
+        ) : (
+          <IconButton size="small" color="primary" onClick={handleSpeak}>
+            <PlayArrow fontSize="small" />
+          </IconButton>
+        )}
+
+        <IconButton size="small" onClick={handleStop}>
+          <Stop fontSize="small" sx={{ color: "red" }} />
         </IconButton>
 
-        {/* 音量滑条 */}
-        <Box display="flex" alignItems="center" gap={0.5}>
+        {/* Volume slider */}
+        <Box display="flex" alignItems="center" gap={1}>
           <VolumeUp fontSize="small" />
           <Slider
             min={0}
@@ -50,44 +120,61 @@ const TextToSpeech: React.FC = () => {
             step={0.01}
             value={volume}
             onChange={(_, v) => setVolume(v as number)}
-            size="small"
             sx={{ width: 100 }}
+            size="small"
           />
         </Box>
 
-        {/* 语音下拉 */}
-        <Select
+        {/* Voice selector */}
+        <Autocomplete
           value={selectedVoice}
-          onChange={(e) => setSelectedVoice(e.target.value)}
-          size="small"
-          sx={{ width: 180 }}
-        >
-          {voices.map(v => (
-            <MenuItem key={v.name} value={v.name}>
-              {v.name} ({v.lang})
-            </MenuItem>
-          ))}
-        </Select>
+          onChange={(_, newValue) => setSelectedVoice(newValue)}
+          options={voices}
+          getOptionLabel={(option) => `${option.name} (${option.lang})`}
+          renderInput={(params) => (
+            <TextField {...params} size="small" label="Select voice" />
+          )}
+          sx={{ width: 260 }}
+        />
       </Box>
 
-      {/* 文本框 */}
-      <TextField
-        label="Enter text"
-        multiline
-        minRows={3}
-        maxRows={10}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        variant="outlined"
-        fullWidth
-        InputProps={{
-          style: {
-            fontSize: "1rem",
-            boxSizing: "border-box",
-            overflowY: "auto",
-          },
-        }}
-      />
+      <Box position="relative">
+        {/* 右上角清空按钮 */}
+        {text && (
+          <IconButton
+            size="small"
+            onClick={handleClear}
+            sx={{
+              position: "absolute",
+              top: 6,
+              right: 6,
+              zIndex: 2,
+              background: "rgba(255,255,255,0.8)",
+              "&:hover": { background: "rgba(255,255,255,1)" }
+            }}
+          >
+            <Clear fontSize="small" />
+          </IconButton>
+        )}
+
+        {/* 带滚动条的 TextField */}
+        <TextField
+          label="Enter text"
+          multiline
+          minRows={3}
+          maxRows={10}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          variant="outlined"
+          fullWidth
+          InputProps={{
+            style: {
+              fontSize: "1rem",
+              overflowY: "auto",   // 保留滚动条
+            },
+          }}
+        />
+      </Box>
     </Box>
   );
 };

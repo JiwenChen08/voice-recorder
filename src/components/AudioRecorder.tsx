@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useRef } from "react";
-import { Box, IconButton, Checkbox, Select, MenuItem, TextField, Slider, Typography } from "@mui/material";
+import { Box, IconButton, Checkbox, Autocomplete, Select, MenuItem, TextField, Slider, Typography } from "@mui/material";
 import { Mic, Stop, Close, Hearing } from "@mui/icons-material";
 declare global {
   interface Window {
@@ -211,13 +211,17 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
         <Checkbox checked={enableCC} onChange={(e) => setEnableCC(e.target.checked)} />
         <Box>CC</Box>
 
-        <Select value={language} onChange={(e) => setLanguage(e.target.value)} size="small">
-          {languages.map((lang) => (
-            <MenuItem key={lang.code} value={lang.code}>
-              {lang.label}
-            </MenuItem>
-          ))}
-        </Select>
+        <Autocomplete
+          options={languages}
+          getOptionLabel={(option) => option.label}
+          value={languages.find((lang) => lang.code === language) || null}
+          onChange={(_, newValue) => {
+            if (newValue) setLanguage(newValue.code);
+          }}
+          size="small"
+          sx={{ width: 180 }} 
+          renderInput={(params) => <TextField {...params} label="Language" variant="outlined" />}
+        />
 
         <Checkbox checked={earReturn} onChange={(e) => setEarReturn(e.target.checked)} />
         <Hearing />
