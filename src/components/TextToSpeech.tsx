@@ -6,12 +6,11 @@ import {
   IconButton,
   Typography,
   Autocomplete,
-  InputAdornment
 } from "@mui/material";
 import { VolumeUp, PlayArrow, Stop, Pause, Clear } from "@mui/icons-material";
 
 const TextToSpeech: React.FC = () => {
-  const [text, setText] = useState("");
+  const [text, setText] = useState("What's the difference between your work and your wife");
   const [volume, setVolume] = useState(0.4);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
@@ -31,7 +30,7 @@ const TextToSpeech: React.FC = () => {
 
       setVoices(filteredVoices);
       const defaultVoice =
-        filteredVoices.find((v) => v.name.includes("Google US English")) ||
+        filteredVoices.find((v) => v.name.includes("Google US English 4")) ||
         filteredVoices[0];
       setSelectedVoice(defaultVoice || null);
     };
@@ -157,7 +156,7 @@ const TextToSpeech: React.FC = () => {
           </IconButton>
         )}
 
-        {/* 带滚动条的 TextField */}
+        {/* TextField */}
         <TextField
           label="Enter text"
           multiline
@@ -170,7 +169,7 @@ const TextToSpeech: React.FC = () => {
           InputProps={{
             style: {
               fontSize: "1rem",
-              overflowY: "auto",   // 保留滚动条
+              overflowY: "auto",
             },
           }}
         />

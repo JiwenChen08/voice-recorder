@@ -194,6 +194,10 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
       <Typography variant="subtitle1">Recorder</Typography>
       {/* 控制按钮 */}
       <Box display="flex" alignItems="center" gap={1}>
+        <IconButton onClick={toggleRecording} color={recording ? "secondary" : "primary"}>
+          {recording ? <Stop /> : <Mic />}
+        </IconButton>
+
         <Box
           width={16}
           height={16}
@@ -203,10 +207,6 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
             animation: recording ? "pulse 1.5s infinite" : "none",
           }}
         />
-
-        <IconButton onClick={toggleRecording} color={recording ? "secondary" : "primary"}>
-          {recording ? <Stop /> : <Mic />}
-        </IconButton>
 
         <Checkbox checked={enableCC} onChange={(e) => setEnableCC(e.target.checked)} />
         <Box>CC</Box>
@@ -219,7 +219,7 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
             if (newValue) setLanguage(newValue.code);
           }}
           size="small"
-          sx={{ width: 180 }} 
+          sx={{ width: 180 }}
           renderInput={(params) => <TextField {...params} label="Language" variant="outlined" />}
         />
 
@@ -249,16 +249,23 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
           value={recognizedText}
           InputProps={{
             readOnly: true,
-            style: { fontSize: "1rem" },
+            style: {
+              fontSize: "1rem",
+              backgroundColor: "#f5f5f5", // 置灰文本框
+            },
           }}
         />
-        <IconButton
-          onClick={clearCC}
-          size="small"
-          sx={{ position: "absolute", right: 4, top: 4 }}
-        >
-          <Close fontSize="small" />
-        </IconButton>
+
+        {/* 只有有字幕时才显示 X 按钮 */}
+        {recognizedText && (
+          <IconButton
+            onClick={clearCC}
+            size="small"
+            sx={{ position: "absolute", right: 4, top: 4 }}
+          >
+            <Close fontSize="small" />
+          </IconButton>
+        )}
       </Box>
 
       <style>{`
