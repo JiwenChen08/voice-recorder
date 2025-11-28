@@ -24,7 +24,6 @@ jobs:
       - name: Install & Build
         run: |
           npm ci
-          export PUBLIC_URL=voice-recorder
           npm run build
 
       # 上传 build 目录供 deploy job 使用
