@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useRef } from "react";
-import { Box, IconButton, Checkbox, Autocomplete, Select, MenuItem, TextField, Slider, Typography } from "@mui/material";
+import { Box, IconButton, Checkbox, Autocomplete, TextField, Slider, Typography } from "@mui/material";
 import { Mic, Stop, Close, Hearing } from "@mui/icons-material";
 declare global {
   interface Window {
@@ -197,84 +197,29 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
         <IconButton onClick={toggleRecording} color={recording ? "secondary" : "primary"}>
           {recording ? <Stop /> : <Mic />}
         </IconButton>
-
-        <Box
-          width={16}
-          height={16}
-          borderRadius="50%"
-          sx={{
-            backgroundColor: recording ? "red" : "gray",
-            animation: recording ? "pulse 1.5s infinite" : "none",
-          }}
-        />
-
-        <Checkbox checked={enableCC} onChange={(e) => setEnableCC(e.target.checked)} />
+        <Box width={16} height={16} borderRadius="50%" sx={{ backgroundColor: recording ? "red" : "gray", animation: recording ? "pulse 1.5s infinite" : "none" }} />
+        <Checkbox checked={enableCC} onChange={e => setEnableCC(e.target.checked)} />
         <Box>CC</Box>
-
-        <Autocomplete
-          options={languages}
-          getOptionLabel={(option) => option.label}
-          value={languages.find((lang) => lang.code === language) || null}
-          onChange={(_, newValue) => {
-            if (newValue) setLanguage(newValue.code);
-          }}
-          size="small"
-          sx={{ width: 180 }}
-          renderInput={(params) => <TextField {...params} label="Language" variant="outlined" />}
-        />
-
-        <Checkbox checked={earReturn} onChange={(e) => setEarReturn(e.target.checked)} />
+        <Autocomplete options={languages} getOptionLabel={option => option.label} value={languages.find(lang => lang.code === language) || null} onChange={(_, newValue) => newValue && setLanguage(newValue.code)} size="small" sx={{ width: 180 }} renderInput={params => <TextField {...params} label="Language" variant="outlined" />} />
+        <Checkbox checked={earReturn} onChange={e => setEarReturn(e.target.checked)} />
         <Hearing />
         {earReturn && (
           <Box width={120} display="flex" alignItems="center">
-            <Slider
-              min={0}
-              max={2}
-              step={0.01}
-              value={earVolume}
-              onChange={(_, v) => setEarVolume(v as number)}
-              size="small"
-            />
+            <Slider min={0} max={2} step={0.01} value={earVolume} onChange={(_, v) => setEarVolume(v as number)} size="small" />
           </Box>
         )}
       </Box>
 
       {/* 识别框 */}
       <Box position="relative" width="100%">
-        <TextField
-          variant="outlined"
-          multiline
-          fullWidth
-          minRows={8}
-          value={recognizedText}
-          InputProps={{
-            readOnly: true,
-            style: {
-              fontSize: "1rem",
-              backgroundColor: "#f5f5f5", // 置灰文本框
-            },
-          }}
-        />
-
-        {/* 只有有字幕时才显示 X 按钮 */}
-        {recognizedText && (
-          <IconButton
-            onClick={clearCC}
-            size="small"
-            sx={{ position: "absolute", right: 4, top: 4 }}
-          >
+        <Box className="cc-wrapper" sx={{ position: "relative", width: "100%" }}>
+          <TextField variant="outlined" multiline fullWidth minRows={8} value={recognizedText} InputProps={{ readOnly: true, style: { fontSize: "1rem", backgroundColor: "#f5f5f5" } }} />
+          <IconButton onClick={clearCC} size="small" className="clear-btn" sx={{ position: "absolute", right: 4, top: 4, opacity: 0, transition: "opacity 0.2s" }}>
             <Close fontSize="small" />
           </IconButton>
-        )}
+        </Box>
       </Box>
-
-      <style>{`
-        @keyframes pulse {
-          0% { opacity: 0.3; }
-          50% { opacity: 1; }
-          100% { opacity: 0.3; }
-        }
-      `}</style>
+      <style>{` .cc-wrapper:hover .clear-btn { opacity: 1; } @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } } `}</style>
     </Box>
   );
 };

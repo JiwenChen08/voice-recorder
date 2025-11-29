@@ -19,7 +19,6 @@ const TextToSpeech: React.FC = () => {
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  // Load voices
   useEffect(() => {
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices();
@@ -27,7 +26,6 @@ const TextToSpeech: React.FC = () => {
       const filteredVoices = allVoices.filter(
         (v) => !blackList.some((name) => v.name.includes(name))
       );
-
       setVoices(filteredVoices);
       const defaultVoice =
         filteredVoices.find((v) => v.name.includes("Google US English 4")) ||
@@ -41,122 +39,52 @@ const TextToSpeech: React.FC = () => {
 
   const handleSpeak = () => {
     if (!text || !selectedVoice) return;
-
     window.speechSynthesis.cancel();
-
     const utter = new SpeechSynthesisUtterance(text);
     utter.voice = selectedVoice;
     utter.volume = volume;
-
-    utter.onstart = () => {
-      setSpeaking(true);
-      setPaused(false);
-    };
-    utter.onend = () => {
-      setSpeaking(false);
-      setPaused(false);
-    };
-
+    utter.onstart = () => { setSpeaking(true); setPaused(false); };
+    utter.onend = () => { setSpeaking(false); setPaused(false); };
     utteranceRef.current = utter;
     window.speechSynthesis.speak(utter);
   };
 
-  const handlePause = () => {
-    if (!speaking) return;
-    window.speechSynthesis.pause();
-    setPaused(true);
-  };
-
-  const handleResume = () => {
-    if (!paused) return;
-    window.speechSynthesis.resume();
-    setPaused(false);
-  };
-
-  const handleStop = () => {
-    window.speechSynthesis.cancel();
-    setSpeaking(false);
-    setPaused(false);
-  };
-
-  const handleClear = () => {
-    setText("");
-  };
+  const handlePause = () => { if (!speaking) return; window.speechSynthesis.pause(); setPaused(true); };
+  const handleResume = () => { if (!paused) return; window.speechSynthesis.resume(); setPaused(false); };
+  const handleStop = () => { window.speechSynthesis.cancel(); setSpeaking(false); setPaused(false); };
+  const handleClear = () => { setText(""); };
 
   return (
     <Box display="flex" flexDirection="column" gap={2} mt={2}>
       <Typography variant="subtitle1">Text-to-Speech</Typography>
 
-      {/* 控制区 */}
       <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-        {/* Play / Stop / Pause / Resume */}
-        {speaking ? (
-          paused ? (
-            <IconButton size="small" color="primary" onClick={handleResume}>
-              <PlayArrow fontSize="small" />
-            </IconButton>
-          ) : (
-            <IconButton size="small" color="primary" onClick={handlePause}>
-              <Pause fontSize="small" />
-            </IconButton>
-          )
+        {speaking ? (paused ? (
+          <IconButton size="small" color="primary" onClick={handleResume}><PlayArrow fontSize="small" /></IconButton>
         ) : (
-          <IconButton size="small" color="primary" onClick={handleSpeak}>
-            <PlayArrow fontSize="small" />
-          </IconButton>
+          <IconButton size="small" color="primary" onClick={handlePause}><Pause fontSize="small" /></IconButton>
+        )) : (
+          <IconButton size="small" color="primary" onClick={handleSpeak}><PlayArrow fontSize="small" /></IconButton>
         )}
 
-        <IconButton size="small" onClick={handleStop}>
-          <Stop fontSize="small" sx={{ color: "red" }} />
-        </IconButton>
+        <IconButton size="small" onClick={handleStop}><Stop fontSize="small" sx={{ color: "red" }} /></IconButton>
 
-        {/* Volume slider */}
         <Box display="flex" alignItems="center" gap={1}>
           <VolumeUp fontSize="small" />
-          <Slider
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={(_, v) => setVolume(v as number)}
-            sx={{ width: 100 }}
-            size="small"
-          />
+          <Slider min={0} max={1} step={0.01} value={volume} onChange={(_, v) => setVolume(v as number)} sx={{ width: 100 }} size="small" />
         </Box>
 
-        {/* Voice selector */}
         <Autocomplete
           value={selectedVoice}
           onChange={(_, newValue) => setSelectedVoice(newValue)}
           options={voices}
           getOptionLabel={(option) => `${option.name} (${option.lang})`}
-          renderInput={(params) => (
-            <TextField {...params} size="small" label="Select voice" />
-          )}
+          renderInput={(params) => (<TextField {...params} size="small" label="Select voice" />)}
           sx={{ width: 260 }}
         />
       </Box>
 
-      <Box position="relative">
-        {/* 右上角清空按钮 */}
-        {text && (
-          <IconButton
-            size="small"
-            onClick={handleClear}
-            sx={{
-              position: "absolute",
-              top: 6,
-              right: 6,
-              zIndex: 2,
-              background: "rgba(255,255,255,0.8)",
-              "&:hover": { background: "rgba(255,255,255,1)" }
-            }}
-          >
-            <Clear fontSize="small" />
-          </IconButton>
-        )}
-
-        {/* TextField */}
+      <Box position="relative" className="text-wrapper">
         <TextField
           label="Enter text"
           multiline
@@ -166,14 +94,29 @@ const TextToSpeech: React.FC = () => {
           onChange={(e) => setText(e.target.value)}
           variant="outlined"
           fullWidth
-          InputProps={{
-            style: {
-              fontSize: "1rem",
-              overflowY: "auto",
-            },
-          }}
+          InputProps={{ style: { fontSize: "1rem", overflowY: "auto" } }}
         />
+
+        <IconButton
+          size="small"
+          onClick={handleClear}
+          className="clear-btn"
+          sx={{
+            position: "absolute",
+            top: 6,
+            right: 6,
+            zIndex: 2,
+            opacity: 0,
+            transition: "opacity 0.2s",
+            background: "rgba(255,255,255,0.8)",
+            "&:hover": { background: "rgba(255,255,255,1)" }
+          }}
+        >
+          <Clear fontSize="small" />
+        </IconButton>
       </Box>
+
+      <style>{` .text-wrapper:hover .clear-btn { opacity: 1; } `}</style>
     </Box>
   );
 };
