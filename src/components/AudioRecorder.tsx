@@ -233,22 +233,19 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
           <IconButton onClick={toggleRecording} color="primary" sx={{ position: "relative" }}>
             <Mic />
             {recording && (
-              <Box sx={{ position: "absolute", top: 4, right: 4, width: 10, height: 10,
-                  borderRadius: "50%", backgroundColor: "red", animation: "pulse 1.5s infinite",
-                }}
+              <Box sx={{
+                position: "absolute", top: 4, right: 4, width: 10, height: 10,
+                borderRadius: "50%", backgroundColor: "red", animation: "pulse 1.5s infinite",
+              }}
               />
             )}
           </IconButton>
 
           {/* 录音计时，固定宽度 */}
           <Box sx={{ width: 25, textAlign: "center" }}>
-            {recording && (
-              <Typography variant="body2">
-                {`${Math.floor(elapsedTime / 60)
-                  .toString()
-                  .padStart(2, "0")}:${(elapsedTime % 60).toString().padStart(2, "0")}`}
-              </Typography>
-            )}
+            <Typography variant="body2">
+              {`${Math.floor(elapsedTime / 60).toString().padStart(2, "0")}:${(elapsedTime % 60).toString().padStart(2, "0")}`}
+            </Typography>
           </Box>
         </Box>
 
@@ -264,7 +261,7 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
         {earReturn && (
           <Box width={120}>
             <Slider min={0} max={2} step={0.01} value={earVolume} size="small"
-              onChange={(_, v) => setEarVolume(v as number)} 
+              onChange={(_, v) => setEarVolume(v as number)}
             />
           </Box>
         )}
@@ -294,7 +291,7 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
       </Box>
 
       {/* CC 识别框 */}
-      <Box position="relative">
+      <Box position="relative" className="cc-wrapper">
         <TextField multiline fullWidth minRows={8} value={recognizedText}
           InputProps={{ readOnly: true, style: { background: "#f5f5f5" } }}
         />
@@ -315,6 +312,9 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
           0% { opacity: 0.3; } 
           50% { opacity: 1; } 
           100% { opacity: 0.3; } 
+        }
+        .audio-player {
+          flex-grow: 1;
         }
       `}
       </style>

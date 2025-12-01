@@ -37,7 +37,3 @@
   align-items: center;
   gap: 8px;
 }
-
-.audio-player {
-  flex-grow: 1;
-}
