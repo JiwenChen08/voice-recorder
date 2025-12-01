@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, IconButton, Checkbox, Autocomplete, TextField, Slider, Typography } from "@mui/material";
 import { Mic, Stop, Close, Hearing } from "@mui/icons-material";
+
 declare global {
   interface Window {
     SpeechRecognition: any;
@@ -38,14 +39,29 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
   const [enableCC, setEnableCC] = useState(false);
   const [language, setLanguage] = useState("en-US");
 
+  // 输入设备
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
+
   // 耳返
   const [earReturn, setEarReturn] = useState(false);
-  const [earVolume, setEarVolume] = useState(0.5); // 默认 0.5
+  const [earVolume, setEarVolume] = useState(0.5);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
-  // 启动/停止语音识别
+  // 初始化设备列表
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then((list) => {
+      const audioInputs = list.filter((d) => d.kind === "audioinput");
+      setDevices(audioInputs);
+      if (!selectedDeviceId && audioInputs.length > 0) {
+        setSelectedDeviceId(audioInputs[0].deviceId);
+      }
+    });
+  }, []);
+
+  // 语音识别
   useEffect(() => {
     if (enableCC) {
       const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -75,16 +91,16 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
       speechRecognition?.stop();
       setSpeechRecognition(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enableCC, language]);
 
-  // 开/关耳返
+  // 耳返
   useEffect(() => {
     const toggleEarReturn = async () => {
       if (earReturn) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
+              deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
               echoCancellation: false,
               noiseSuppression: false,
               autoGainControl: false,
@@ -105,27 +121,28 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
         audioCtxRef.current?.close();
         audioCtxRef.current = null;
         gainNodeRef.current = null;
-        micStreamRef.current?.getTracks().forEach(track => track.stop());
+        micStreamRef.current?.getTracks().forEach((t) => t.stop());
         micStreamRef.current = null;
       }
     };
     toggleEarReturn();
-  }, [earReturn]);
+  }, [earReturn, selectedDeviceId]);
 
-  // 调整耳返音量
   useEffect(() => {
     if (gainNodeRef.current) {
       gainNodeRef.current.gain.value = earVolume;
     }
   }, [earVolume]);
 
-  // 切换录音
+  // 录音
   const toggleRecording = async () => {
     if (recording) {
       mediaRecorder?.stop();
       setRecording(false);
     } else {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined },
+      });
       const recorder = new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
 
@@ -146,13 +163,11 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
   const clearCC = () => {
     setRecognizedText("");
 
-    // 重置语音识别
     if (speechRecognition) {
       speechRecognition.stop();
       setSpeechRecognition(null);
     }
 
-    // 如果 CC 已开启，重新启动语音识别
     if (enableCC) {
       const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!Rec) return;
@@ -175,7 +190,7 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
     }
   };
 
-  // 定义语言列表
+  // 语言列表
   const languages = [
     { code: "en-US", label: "English (US)" },
     { code: "en-GB", label: "English (UK)" },
@@ -186,40 +201,113 @@ const AudioRecorder: React.FC<Props> = ({ onSave }) => {
     { code: "ja-JP", label: "Japanese" },
     { code: "ko-KR", label: "Korean" },
     { code: "ru-RU", label: "Russian" },
-    // 可以继续扩展
   ];
 
   return (
     <Box display="flex" flexDirection="column" gap={1}>
       <Typography variant="subtitle1">Recorder</Typography>
-      {/* 控制按钮 */}
+
+      {/* 第一行：录音按钮 + CC + 耳返 */}
       <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={toggleRecording} color={recording ? "secondary" : "primary"}>
-          {recording ? <Stop /> : <Mic />}
+        {/* 录音按钮 */}
+        <IconButton
+          onClick={toggleRecording}
+          color="primary"
+          sx={{ position: "relative" }}
+        >
+          <Mic />
+          {recording && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 4,
+                right: 4,
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                backgroundColor: "red",
+                animation: "pulse 1.5s infinite",
+              }}
+            />
+          )}
         </IconButton>
-        <Box width={16} height={16} borderRadius="50%" sx={{ backgroundColor: recording ? "red" : "gray", animation: recording ? "pulse 1.5s infinite" : "none" }} />
-        <Checkbox checked={enableCC} onChange={e => setEnableCC(e.target.checked)} />
-        <Box>CC</Box>
-        <Autocomplete options={languages} getOptionLabel={option => option.label} value={languages.find(lang => lang.code === language) || null} onChange={(_, newValue) => newValue && setLanguage(newValue.code)} size="small" sx={{ width: 180 }} renderInput={params => <TextField {...params} label="Language" variant="outlined" />} />
-        <Checkbox checked={earReturn} onChange={e => setEarReturn(e.target.checked)} />
+
+        {/* CC */}
+        <Box display="flex" alignItems="center" gap={0.5}>
+          <Checkbox checked={enableCC} onChange={(e) => setEnableCC(e.target.checked)} />
+          <Box>CC</Box>
+        </Box>
+
+        {/* 耳返 */}
+        <Checkbox checked={earReturn} onChange={(e) => setEarReturn(e.target.checked)} />
         <Hearing />
         {earReturn && (
-          <Box width={120} display="flex" alignItems="center">
-            <Slider min={0} max={2} step={0.01} value={earVolume} onChange={(_, v) => setEarVolume(v as number)} size="small" />
+          <Box width={120}>
+            <Slider
+              min={0}
+              max={2}
+              step={0.01}
+              value={earVolume}
+              onChange={(_, v) => setEarVolume(v as number)}
+              size="small"
+            />
           </Box>
         )}
       </Box>
 
-      {/* 识别框 */}
-      <Box position="relative" width="100%">
-        <Box className="cc-wrapper" sx={{ position: "relative", width: "100%" }}>
-          <TextField variant="outlined" multiline fullWidth minRows={8} value={recognizedText} InputProps={{ readOnly: true, style: { fontSize: "1rem", backgroundColor: "#f5f5f5" } }} />
-          <IconButton onClick={clearCC} size="small" className="clear-btn" sx={{ position: "absolute", right: 4, top: 4, opacity: 0, transition: "opacity 0.2s" }}>
-            <Close fontSize="small" />
-          </IconButton>
-        </Box>
+      {/* 第二行：语言选择 + 麦克风设备选择 */}
+      <Box display="flex" alignItems="center" gap={1}>
+        <Autocomplete
+          sx={{ width: 180 }}
+          size="small"
+          options={languages}
+          value={languages.find((l) => l.code === language) || null}
+          getOptionLabel={(o) => o.label}
+          onChange={(_, v) => v && setLanguage(v.code)}
+          renderInput={(params) => <TextField {...params} label="Language" />}
+        />
+
+        <Autocomplete
+          sx={{ width: 240 }}
+          size="small"
+          options={devices}
+          getOptionLabel={(d) => d.label || "Unknown Device"}
+          value={devices.find((d) => d.deviceId === selectedDeviceId) || null}
+          onChange={(_, v) => v && setSelectedDeviceId(v.deviceId)}
+          renderInput={(params) => <TextField {...params} label="Mic Device" />}
+        />
       </Box>
-      <style>{` .cc-wrapper:hover .clear-btn { opacity: 1; } @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } } `}</style>
+
+      {/* CC 识别框 */}
+      <Box position="relative">
+        <TextField
+          multiline
+          fullWidth
+          minRows={8}
+          value={recognizedText}
+          InputProps={{ readOnly: true, style: { background: "#f5f5f5" } }}
+        />
+        <IconButton
+          onClick={clearCC}
+          size="small"
+          sx={{ position: "absolute", right: 4, top: 4, opacity: 0, transition: "opacity .2s" }}
+          className="clear-btn"
+        >
+          <Close fontSize="small" />
+        </IconButton>
+      </Box>
+
+      {/* 样式 */}
+      <style>
+        {`
+        .cc-wrapper:hover .clear-btn { opacity: 1; }
+        @keyframes pulse { 
+          0% { opacity: 0.3; } 
+          50% { opacity: 1; } 
+          100% { opacity: 0.3; } 
+        }
+      `}
+      </style>
     </Box>
   );
 };

@@ -35,7 +35,7 @@ const RecordingsHistory: React.FC<Props> = ({ recordings, onDelete, onClearAll }
           </Typography>
 
           {/* 播放条 */}
-          <audio controls src={rec.url} style={{ flexGrow: 1 }} />
+          <audio controls src={rec.url} className="audio-player" />
 
           {/* 下载按钮 */}
           <IconButton
